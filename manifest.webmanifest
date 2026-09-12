@@ -1,0 +1,11 @@
+{
+  "name": "The Mineral Revolution and the War of 1899",
+  "short_name": "Mineral Revolution",
+  "description": "Grade 10 History content quiz on the Mineral Revolution and the causes of the South African War.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#101418",
+  "theme_color": "#101418",
+  "orientation": "portrait",
+  "icons": []
+}
