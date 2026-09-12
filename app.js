@@ -57,6 +57,28 @@
   function writeQueue(rows) {
     try { localStorage.setItem(QUEUE_KEY, JSON.stringify(rows)); } catch (e) {}
   }
+  /* Supabase rejects a batch whose rows do not all carry the same keys, and a
+     batch holds answers and confidence rows together. So every row is built
+     from the same template, with null where a column does not apply. */
+  var ROW_TEMPLATE = {
+    quiz_id: null, attempt_id: null, attempt_no: null, row_type: null,
+    learner_ref: null, first_name: null, surname: null, class_code: null,
+    item_id: '', item_ref: null, tier: null, caps_level: null,
+    marks_awarded: null, marks_available: null, chosen_option: null,
+    guide_opened: null, stage: '', confidence: null, confidence_reason: null,
+    answered_at: null, offline_when_answered: null
+  };
+
+  function fullRow(row) {
+    var out = {};
+    for (var k in ROW_TEMPLATE) {
+      if (Object.prototype.hasOwnProperty.call(ROW_TEMPLATE, k)) {
+        out[k] = (row[k] === undefined) ? ROW_TEMPLATE[k] : row[k];
+      }
+    }
+    return out;
+  }
+
   function queueRow(row) {
     var s = readStore();
     row.learner_ref = s.learnerRef || 'unknown';
@@ -68,7 +90,7 @@
     if (row.item_id === undefined) row.item_id = '';
     if (row.stage === undefined) row.stage = '';
     var q = readQueue();
-    q.push(row);
+    q.push(fullRow(row));
     writeQueue(q);
     trySync();
   }
@@ -94,10 +116,13 @@
       }
       /* 401, 403 or a bad row would fail on every retry and burn the
          learner's data. Stop for this session and keep the rows safe. */
-      if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
-        syncPaused = true;
-      }
-      throw new Error('sync ' + res.status);
+      return res.text().then(function (body) {
+        if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
+          syncPaused = true;
+        }
+        console.error('Kula sync failed, status ' + res.status + ': ' + body);
+        throw new Error('sync ' + res.status);
+      });
     }).catch(function () { /* rows stay on the phone for the next connection */ });
   }
 
