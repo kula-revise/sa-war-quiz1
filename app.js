@@ -11,9 +11,9 @@
   var SB_KEY = window.KULA_SUPABASE_ANON_KEY || '';
   var CLASS_CODE = window.KULA_CLASS_CODE || null;
   var SEND_NAMES = window.KULA_SEND_NAMES !== false;
-  var ROWS_URL = SB_URL && SB_KEY
-    ? SB_URL + '/rest/v1/quiz_rows?on_conflict=attempt_id,row_type,item_id,stage'
-    : null;
+  /* One function call, not a table insert. The function does the duplicate
+     check inside the database, so nothing needs upsert rights over the API. */
+  var ROWS_URL = SB_URL && SB_KEY ? SB_URL + '/rest/v1/rpc/submit_rows' : null;
   var RPC_URL = SB_URL && SB_KEY ? SB_URL + '/rest/v1/rpc/cohort_median' : null;
   var syncPaused = false;
 
@@ -108,11 +108,11 @@
 
     fetch(ROWS_URL, {
       method: 'POST',
-      headers: sbHeaders({ 'Prefer': 'resolution=ignore-duplicates,return=minimal' }),
+      headers: sbHeaders(),
       /* Normalised here, not only when queued. Rows saved by an older build
          are still on the phone and would otherwise be sent with a different
          set of columns, which Supabase refuses as a batch. */
-      body: JSON.stringify(q.map(fullRow))
+      body: JSON.stringify({ rows: q.map(fullRow) })
     }).then(function (res) {
       if (res.ok) {
         var left = readQueue().slice(sending);

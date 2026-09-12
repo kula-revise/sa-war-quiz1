@@ -1,7 +1,7 @@
 /* Kula Revise Grade 10 content quiz, service worker.
    Network first for code so updates land. Cache first for the rest.
    A learner with no data must still be able to open and finish an attempt. */
-const CACHE = 'kula-g10-content-quiz-v4';
+const CACHE = 'kula-g10-content-quiz-v5';
 const PRECACHE = ['./', './index.html', './styles.css', './config.js', './content.js', './app.js', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {
