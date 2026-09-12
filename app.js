@@ -20,9 +20,12 @@
   function sbHeaders(extra) {
     var h = {
       'Content-Type': 'application/json',
-      'apikey': SB_KEY,
-      'Authorization': 'Bearer ' + SB_KEY
+      'apikey': SB_KEY
     };
+    /* Old anon keys were JWTs and had to go in the Authorization header too.
+       The newer sb_publishable_ keys are not JWTs, and sending one as a bearer
+       token gets the request refused with a 401. */
+    if (SB_KEY.indexOf('eyJ') === 0) h['Authorization'] = 'Bearer ' + SB_KEY;
     if (extra) for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) h[k] = extra[k];
     return h;
   }
@@ -106,7 +109,10 @@
     fetch(ROWS_URL, {
       method: 'POST',
       headers: sbHeaders({ 'Prefer': 'resolution=ignore-duplicates,return=minimal' }),
-      body: JSON.stringify(q)
+      /* Normalised here, not only when queued. Rows saved by an older build
+         are still on the phone and would otherwise be sent with a different
+         set of columns, which Supabase refuses as a batch. */
+      body: JSON.stringify(q.map(fullRow))
     }).then(function (res) {
       if (res.ok) {
         var left = readQueue().slice(sending);
